@@ -1,0 +1,263 @@
+symbols scorched.noi
+waituntil game_state == 0 300 w1
+run 90
+tap 1
+waituntil game_state == 1 60 w1
+run 20
+tap down
+run 4
+tap down
+run 4
+tap left
+run 4
+tap left
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap right
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+waituntil game_state == 6 100 w1
+run 40
+tap 2
+waituntil game_state == 6 100 w1
+run 40
+tap 2
+waituntil game_state == 2 400 w1
+run 10
+echo horizontal guidance (P1)
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 1 w1
+poke tanks+23 5 w1
+poke tanks+72 300
+poke tanks+77 1 w1
+poke tanks+93 5 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+tap 1
+waituntil game_state == 2 600 w1
+run 3
+poke tanks+67 1 w1
+poke tanks+6 100 w1
+tap 2
+run 6
+tap down
+run 4
+tap right
+run 4
+expect tanks+13 == 12 w1
+tap 2
+run 8
+tap 1
+run 6
+tap 1
+waituntil proj+19 == 1 600 w1
+run 4
+screenshot shots/g_horz.ppm
+waituntil game_state == 2 3000 w1
+echo ballistic guidance fixes a bad power setting (P2)
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 1 w1
+poke tanks+23 5 w1
+poke tanks+72 300
+poke tanks+77 1 w1
+poke tanks+93 5 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+tap 1
+waituntil game_state == 2 600 w1
+run 3
+poke tanks+136 1 w1
+poke tanks+76 15 w1
+tap 2
+run 6
+tap down
+run 4
+tap right
+run 4
+expect tanks+83 == 11 w1
+tap 2
+run 8
+tap 1
+run 6
+tap 1
+waituntil game_state == 4 900 w1
+expect tanks+76 > 25 w1
+run 6
+screenshot shots/g_ballistic.ppm
+waituntil game_state == 2 3000 w1
+expect tanks+2 < 300
+echo force shield bounces a shell (P1 fires at shielded P2)
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 1 w1
+poke tanks+23 5 w1
+poke tanks+72 300
+poke tanks+77 1 w1
+poke tanks+93 5 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+tap 1
+waituntil game_state == 2 600 w1
+run 3
+poke tanks+81 4 w1
+poke tanks+82 100 w1
+tap 1
+waituntil game_state == 2 3000 w1
+expect tanks+72 == 300
+echo contact trigger: roller detonates on impact (P2)
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 1 w1
+poke tanks+23 5 w1
+poke tanks+72 300
+poke tanks+77 1 w1
+poke tanks+93 5 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+tap 1
+waituntil game_state == 2 600 w1
+run 3
+poke tanks+77 13 w1
+poke tanks+105 3 w1
+poke tanks+134 5 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap right
+run 4
+expect tanks+84 == 1 w1
+tap 2
+run 8
+tap 1
+waituntil game_state == 2 3000 w1
+expect tanks+134 == 4 w1
+expect trig_armed == 1 w1
+echo super mag deflects (P1 fires at P2)
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 1 w1
+poke tanks+23 5 w1
+poke tanks+72 300
+poke tanks+77 1 w1
+poke tanks+93 5 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+tap 1
+waituntil game_state == 2 600 w1
+run 3
+poke tanks+81 6 w1
+poke tanks+82 60 w1
+tap 1
+waituntil game_state == 3 300 w1
+run 50
+screenshot shots/g_mag.ppm
+waituntil game_state == 2 3000 w1
+echo auto defense raises the best shield at the next round
+poke tanks+62 1 w1
+poke tanks+60 1 w1
+poke tanks+2 0
+poke tanks+77 0 w1
+tap 1
+waituntil game_state == 5 3000 w1
+run 10
+tap 1
+waituntil game_state == 6 200 w1
+run 40
+tap 2
+waituntil game_state == 6 200 w1
+run 40
+tap 2
+waituntil game_state == 2 600 w1
+expect tanks+11 == 5 w1
+expect tanks+12 == 150 w1
+expect tanks+62 == 0 w1
+run 4
+screenshot shots/g_autodef.ppm
+expectpace 0

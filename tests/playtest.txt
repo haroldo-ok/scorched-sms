@@ -1,0 +1,848 @@
+symbols scorched.noi
+echo boot -> title
+waituntil game_state == 0 300 w1
+run 90
+expectvdp display 1
+expectcolors 8
+screenshot shots/00_title.ppm
+tap 1
+waituntil game_state == 1 60 w1
+run 20
+echo setup: P2 human, talking off
+tap down
+run 4
+tap down
+run 4
+tap left
+run 4
+tap left
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap right
+run 4
+tap down
+run 4
+tap down
+run 4
+screenshot shots/01_setup.ppm
+tap 1
+waituntil game_state == 6 100 w1
+run 40
+echo shop: buy a missile pack, browse pages
+tap 1
+run 6
+expect tanks+23 == 5 w1
+expect tanks+18 == 4810
+tap right
+run 8
+tap right
+run 8
+tap down
+run 6
+tap down
+run 6
+tap down
+run 6
+screenshot shots/02_shop.ppm
+tap 2
+run 4
+waituntil game_state == 6 100 w1
+run 40
+tap 2
+run 4
+waituntil game_state == 2 400 w1
+run 10
+expect num_players == 2 w1
+screenshot shots/03_aim.ppm
+echo aim responds to the pad
+hold left
+run 30
+hold none
+run 2
+expect tanks+5 > 60 w1
+echo item: shield from the arsenal menu
+poke tanks+58 2 w1
+tap 2
+run 6
+expect game_state == 9 w1
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect tanks+11 == 3 w1
+expect tanks+12 == 55 w1
+expect tanks+58 == 1 w1
+screenshot shots/11_menu.ppm
+tap 2
+run 8
+expect game_state == 2 w1
+echo item: battery
+poke tanks+2 50
+poke tanks+56 3 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect tanks+2 == 60
+tap 2
+run 8
+echo item: fuel / tank movement
+poke tanks+63 40 w1
+print tanks+0 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 10 w1
+hold left
+run 50
+hold none
+run 4
+screenshot shots/12_move.ppm
+print tanks+0 w1
+expect tanks+63 < 40 w1
+tap 1
+run 6
+expect game_state == 2 w1
+echo item: lazy boy auto-aim
+poke tanks+69 1 w1
+poke tanks+7 1 w1
+poke tanks+23 5 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+run 10
+screenshot shots/13_target.ppm
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+print tanks+5 w1
+print tanks+6 w1
+echo weapon: missile
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 1 w1
+poke tanks+23 3 w1
+poke tanks+72 300
+poke tanks+77 1 w1
+poke tanks+93 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+echo   + vertical guidance
+poke tanks+68 1 w1
+poke tanks+6 100 w1
+tap 2
+run 6
+tap down
+run 4
+tap right
+run 4
+expect tanks+13 == 13 w1
+tap 2
+run 8
+run 2
+tap 1
+expect game_state == 11 w1
+tap 1
+waituntil proj+19 == 2 600 w1
+run 4
+screenshot shots/04_vert.ppm
+waituntil game_state == 4 900 w1
+run 14
+screenshot shots/w_missile.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 1 w1
+expect tanks+23 == 2 w1
+echo weapon: nuke
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 3 w1
+poke tanks+25 3 w1
+poke tanks+72 300
+poke tanks+77 3 w1
+poke tanks+95 3 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+139 == 0 w1
+echo   + parachute on the other tank
+poke tanks+55 2 w1
+poke tanks+1 40 w1
+run 2
+tap 1
+waituntil tanks+15 == 1 900 w1
+run 30
+screenshot shots/05_chute.ppm
+waituntil game_state == 2 3000 w1
+run 4
+screenshot shots/w_nuke.ppm
+expect tanks+55 == 1 w1
+expect tanks+2 > 200
+expect shots_fired == 2 w1
+expect tanks+95 == 2 w1
+echo weapon: leapfrog
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 4 w1
+poke tanks+26 3 w1
+poke tanks+72 300
+poke tanks+77 4 w1
+poke tanks+96 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 40
+screenshot shots/w_leapfrog.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 3 w1
+expect tanks+26 == 2 w1
+echo weapon: funky
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 5 w1
+poke tanks+27 3 w1
+poke tanks+72 300
+poke tanks+77 5 w1
+poke tanks+97 3 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+139 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 30
+screenshot shots/w_funky.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 4 w1
+expect tanks+97 == 2 w1
+echo weapon: mirv
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 6 w1
+poke tanks+28 3 w1
+poke tanks+72 300
+poke tanks+77 6 w1
+poke tanks+98 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 20
+screenshot shots/w_mirv.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 5 w1
+expect tanks+28 == 2 w1
+echo weapon: deathhead
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 7 w1
+poke tanks+29 3 w1
+poke tanks+72 300
+poke tanks+77 7 w1
+poke tanks+99 3 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+139 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 30
+screenshot shots/w_deathhead.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 6 w1
+expect tanks+99 == 2 w1
+echo weapon: napalm
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 8 w1
+poke tanks+30 3 w1
+poke tanks+72 300
+poke tanks+77 8 w1
+poke tanks+100 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 60
+screenshot shots/w_napalm.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 7 w1
+expect tanks+30 == 2 w1
+echo weapon: smoke
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 11 w1
+poke tanks+33 3 w1
+poke tanks+72 300
+poke tanks+77 11 w1
+poke tanks+103 3 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+139 == 0 w1
+run 2
+tap 1
+waituntil game_state == 2 3000 w1
+run 4
+screenshot shots/w_smoke.ppm
+expect shots_fired == 8 w1
+expect tanks+103 == 2 w1
+echo weapon: roller
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 13 w1
+poke tanks+35 3 w1
+poke tanks+72 300
+poke tanks+77 13 w1
+poke tanks+105 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 8
+screenshot shots/w_roller.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 9 w1
+expect tanks+35 == 2 w1
+echo weapon: riotcharge
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 15 w1
+poke tanks+37 3 w1
+poke tanks+72 300
+poke tanks+77 15 w1
+poke tanks+107 3 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 8
+screenshot shots/w_riotcharge.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 10 w1
+expect tanks+107 == 2 w1
+echo weapon: riotbomb
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 17 w1
+poke tanks+39 3 w1
+poke tanks+72 300
+poke tanks+77 17 w1
+poke tanks+109 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 10
+screenshot shots/w_riotbomb.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 11 w1
+expect tanks+39 == 2 w1
+echo weapon: digger
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 20 w1
+poke tanks+42 3 w1
+poke tanks+72 300
+poke tanks+77 20 w1
+poke tanks+112 3 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+139 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 20
+screenshot shots/w_digger.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 12 w1
+expect tanks+112 == 2 w1
+echo weapon: sandhog
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 23 w1
+poke tanks+45 3 w1
+poke tanks+72 300
+poke tanks+77 23 w1
+poke tanks+115 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 30
+screenshot shots/w_sandhog.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 13 w1
+expect tanks+45 == 2 w1
+echo weapon: dirtball
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 26 w1
+poke tanks+48 3 w1
+poke tanks+72 300
+poke tanks+77 26 w1
+poke tanks+118 3 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+139 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 12
+screenshot shots/w_dirtball.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 14 w1
+expect tanks+118 == 2 w1
+echo weapon: liquid
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 28 w1
+poke tanks+50 3 w1
+poke tanks+72 300
+poke tanks+77 28 w1
+poke tanks+120 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 25
+screenshot shots/w_liquid.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 15 w1
+expect tanks+50 == 2 w1
+echo weapon: dirtcharge
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 29 w1
+poke tanks+51 3 w1
+poke tanks+72 300
+poke tanks+77 29 w1
+poke tanks+121 3 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 8
+screenshot shots/w_dirtcharge.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 16 w1
+expect tanks+121 == 2 w1
+echo weapon: disrupter
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 30 w1
+poke tanks+52 3 w1
+poke tanks+72 300
+poke tanks+77 30 w1
+poke tanks+122 3 w1
+poke tanks+69 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+69 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 6
+screenshot shots/w_disrupter.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 17 w1
+expect tanks+52 == 2 w1
+echo weapon: plasma
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 31 w1
+poke tanks+53 3 w1
+poke tanks+72 300
+poke tanks+77 31 w1
+poke tanks+123 3 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 14
+screenshot shots/w_plasma.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 18 w1
+expect tanks+123 == 2 w1
+echo weapon: laser
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 32 w1
+poke tanks+54 3 w1
+poke tanks+72 300
+poke tanks+77 32 w1
+poke tanks+124 3 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 12
+screenshot shots/w_laser.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 19 w1
+expect tanks+54 == 2 w1
+echo weapon: hvyroller
+poke wind 0 w1
+poke wind_acc 0
+poke wind_acc+2 0
+poke tanks+2 300
+poke tanks+7 14 w1
+poke tanks+36 3 w1
+poke tanks+72 300
+poke tanks+77 14 w1
+poke tanks+106 3 w1
+poke tanks+139 1 w1
+tap 2
+run 6
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap 1
+run 6
+expect game_state == 11 w1
+tap 1
+waituntil game_state == 2 600 w1
+expect tanks+139 == 0 w1
+run 2
+tap 1
+waituntil game_state == 4 900 w1
+run 20
+screenshot shots/w_hvyroller.ppm
+waituntil game_state == 2 4000 w1
+expect shots_fired == 20 w1
+expect tanks+106 == 2 w1
+run 5
+screenshot shots/10_after_weapons.ppm
+print pool_free w1
+echo end the round: kill the other tank
+poke tanks+2 0
+poke tanks+77 0 w1
+tap 1
+waituntil game_state == 5 2000 w1
+run 20
+screenshot shots/16_roundend.ppm
+expect cur_round == 0 w1
+tap 1
+waituntil game_state == 6 200 w1
+run 40
+tap 2
+waituntil game_state == 6 200 w1
+run 40
+tap 2
+waituntil game_state == 2 600 w1
+expect cur_round == 1 w1
+echo last round -> game over -> title
+poke cur_round 4 w1
+poke tanks+72 0
+poke tanks+7 0 w1
+poke tanks+77 0 w1
+tap 1
+waituntil game_state == 5 3000 w1
+run 10
+tap 1
+waituntil game_state == 7 200 w1
+run 10
+screenshot shots/17_gameover.ppm
+tap 1
+waituntil game_state == 0 600 w1
+expectpace 0
+spmin

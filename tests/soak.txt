@@ -1,0 +1,79 @@
+symbols scorched.noi
+waituntil game_state == 0 300 w1
+run 100
+tap 1
+waituntil game_state == 1 60 w1
+run 20
+tap right
+run 4
+tap right
+run 4
+tap down
+run 4
+tap right
+run 4
+tap down
+run 4
+tap down
+run 4
+tap right
+run 4
+tap down
+run 4
+tap right
+run 4
+tap right
+run 4
+tap down
+run 4
+tap left
+run 4
+tap down
+run 4
+tap right
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap right
+run 4
+tap down
+run 4
+screenshot shots/s0_setup.ppm
+tap 1
+waituntil game_state == 8 600 w1
+expect num_players == 4 w1
+expect num_rounds == 3 w1
+expect tanks+8 == 1 w1
+expect tanks+218 == 4 w1
+shots shots/s_r1_ 6 400
+waituntil game_state == 5 120000 w1
+frames
+run 30
+screenshot shots/s1_round.ppm
+tap 1
+waituntil game_state == 8 600 w1
+shots shots/s_r2_ 3 500
+waituntil game_state == 5 120000 w1
+frames
+run 30
+screenshot shots/s2_round.ppm
+tap 1
+waituntil game_state == 8 600 w1
+shots shots/s_r3_ 3 500
+waituntil game_state == 5 120000 w1
+frames
+run 30
+screenshot shots/s3_round.ppm
+tap 1
+waituntil game_state == 7 300 w1
+run 10
+screenshot shots/s9_gameover.ppm
+print shots_fired w1
+tap 1
+waituntil game_state == 0 600 w1
+expectpace 0
+spmin
