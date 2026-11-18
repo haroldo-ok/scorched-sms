@@ -16,7 +16,7 @@ a("symbols scorched.noi",
   "expectvdp display 1", "expectcolors 8", "screenshot shots/00_title.ppm",
   "tap 1", "waituntil game_state == 1 60 w1", "run 20")
 a("echo setup: P2 human, talking off")
-taps("down", 2); taps("left", 2); taps("down", 4); taps("right", 1); taps("down", 2)
+taps("down", 2); taps("left", 2); taps("down", 4); taps("right", 1); taps("down", 4)
 a("screenshot shots/01_setup.ppm", "tap 1",
   "waituntil game_state == 6 100 w1", "run 40")
 a("echo shop: buy a missile pack, browse pages")
@@ -151,7 +151,7 @@ taps("down", 1); taps("right", 2)        # P4 CYBORG
 taps("down", 1); taps("left", 1)         # rounds 3
 taps("down", 1); taps("right", 1)        # cash 10000
 taps("down", 3); taps("right", 1)        # wind changing
-taps("down", 1)
+taps("down", 3)                          # past SKY / AUTO END to START
 a("screenshot shots/s0_setup.ppm", "tap 1",
   "waituntil game_state == 8 600 w1",
   "expect num_players == 4 w1", "expect num_rounds == 3 w1",
@@ -171,7 +171,7 @@ open("tests/soak.txt", "w").write("\n".join(L) + "\n")
 L = []
 a("symbols scorched.noi",
   "waituntil game_state == 0 300 w1", "run 90", "tap 1", "waituntil game_state == 1 60 w1", "run 20")
-taps("down", 2); taps("left", 2); taps("down", 4); taps("right", 1); taps("down", 2)
+taps("down", 2); taps("left", 2); taps("down", 4); taps("right", 1); taps("down", 4)
 a("tap 1", "waituntil game_state == 6 100 w1", "run 40", "tap 2",
   "waituntil game_state == 6 100 w1", "run 40", "tap 2", "waituntil game_state == 2 400 w1", "run 10")
 def lazy(cur):
@@ -218,3 +218,55 @@ a("echo auto defense raises the best shield at the next round",
   "expect %s == 0 w1" % f(0, "items", I["AUTODEF"]), "run 4", "screenshot shots/g_autodef.ppm",
   "expectpace 0")
 open("tests/items2.txt", "w").write("\n".join(L) + "\n")
+
+# ---- features: auto end (no humans left), PAUSE system menu, lightning
+L = []
+a("symbols scorched.noi",
+  "waituntil game_state == 0 300 w1", "run 90", "tap 1", "waituntil game_state == 1 60 w1", "run 20")
+taps("right", 1)                          # 3 players: P1 human, P2/P3 shooter
+taps("down", 4); taps("left", 1)          # rounds 5 -> 3
+taps("down", 3); taps("right", 1)         # talking off
+taps("down", 2); taps("right", 4)         # sky RANDOM -> STORMY
+a("expect opt_sky == 4 w1", "expect opt_autoend == 1 w1", "screenshot shots/f0_setup.ppm")
+taps("down", 2)
+a("tap 1", "waituntil game_state == 6 100 w1", "run 40", "tap 2",
+  "waituntil game_state == 2 900 w1", "expect cur_sky == 4 w1",
+  "echo lightning", "waituntil bolt_t == 8 900 w1", "screenshot shots/f1_lightning.ppm")
+a("echo auto end: the only human dies, two CPUs still alive",
+  "poke %s 0" % f(0, "hp"), "poke %s 0 w1" % f(0, "weapon"), "poke %s 90 w1" % f(0, "angle"),
+  "poke %s 20 w1" % f(0, "power"), "run 3", "tap 1",
+  "waituntil game_state == 5 1500 w1",
+  "expect %s == 1 w1" % f(1, "alive"), "expect %s == 1 w1" % f(2, "alive"),
+  "expect cur_round == 0 w1", "run 10", "screenshot shots/f2_autoend.ppm",
+  "tap 1", "waituntil game_state == 6 200 w1", "run 40", "tap 2")
+a("echo PAUSE -> END ROUND during a CPU turn",
+  "waituntil game_state == 8 2000 w1", "run 10", "pause", "run 4",
+  "expect game_state == 13 w1", "screenshot shots/f3_sysmenu.ppm",
+  "tap down", "run 4", "tap 1", "waituntil game_state == 5 300 w1",
+  "expect cur_round == 1 w1", "expect %s == 1 w1" % f(1, "alive"),
+  "run 10", "screenshot shots/f4_endround.ppm",
+  "tap 1", "waituntil game_state == 6 200 w1", "run 40", "tap 2")
+a("echo PAUSE -> MASS KILL",
+  "waituntil game_state == 2 2000 w1", "run 10", "pause", "run 4",
+  "expect game_state == 13 w1", "tap down", "run 4", "tap down", "run 4", "tap 1",
+  "waituntil game_state == 4 200 w1", "run 6", "screenshot shots/f5_masskill.ppm",
+  "waituntil game_state == 5 600 w1",
+  "expect %s == 0 w1" % f(0, "alive"), "expect %s == 0 w1" % f(1, "alive"), "expect %s == 0 w1" % f(2, "alive"),
+  "run 10", "screenshot shots/f6_masskill_summary.ppm",
+  "tap 1", "waituntil game_state == 7 300 w1", "run 20", "tap 1", "waituntil game_state == 0 600 w1",
+  "echo PAUSE is ignored outside a round", "pause", "run 4", "expect game_state == 0 w1",
+  "expectpace 0", "spmin")
+open("tests/features.txt", "w").write("\n".join(L) + "\n")
+
+# ---- one short script per sky style (screenshot of the first turn)
+for sky, name in [(1, "plain"), (2, "shaded"), (3, "stars"), (4, "stormy"), (5, "sunset")]:
+    L = []
+    a("symbols scorched.noi",
+      "waituntil game_state == 0 300 w1", "run 90", "tap 1", "waituntil game_state == 1 60 w1", "run 20")
+    taps("down", 8); taps("right", sky)
+    a("expect opt_sky == %d w1" % sky)
+    taps("down", 2)
+    a("tap 1", "waituntil game_state == 6 100 w1", "run 40", "tap 2",
+      "waituntil game_state == 2 900 w1", "expect cur_sky == %d w1" % sky,
+      "run 20", "screenshot shots/sky_%d_%s.ppm" % (sky, name))
+    open("tests/sky_%s.txt" % name, "w").write("\n".join(L) + "\n")

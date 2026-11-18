@@ -397,7 +397,7 @@ static void napalm(int x, u8 y, u8 n, u8 dmg) {
     }
     sfx_crackle();
     game_state = ST_EXPLODE;
-    for (life = 0; life < 120; life++) {
+    for (life = 0; life < 120 && !round_abort; life++) {
         for (k = 0; k < n; k++) {
             i = k + life; while (i >= n) i -= n;
             if (life & 1) {
@@ -445,7 +445,7 @@ static void roller(int x, u8 y, long vx, u8 r, u8 dmg) {
     else if (rr != 255 && rr > ry) dir = 1;
     else dir = vx < 0 ? -1 : 1;
     game_state = ST_EXPLODE;
-    for (n = 0; n < 300; n++) {
+    for (n = 0; n < 300 && !round_abort; n++) {
         nx = x + dir;
         if (nx < 0 || nx > 255) break;
         s = col_surface(nx, ry);
@@ -477,7 +477,7 @@ static void dig(int x, u8 y, u8 worms, u8 len, u8 tr, u8 br, u8 bd) {
         wlive[i] = 1;
     }
     game_state = ST_EXPLODE;
-    for (n = 0; n < len; n++) {
+    for (n = 0; n < len && !round_abort; n++) {
         for (i = 0; i < worms; i++) {
             if (!wlive[i]) continue;
             wa[i] += (rnd() & 15) - 8;
@@ -493,7 +493,7 @@ static void dig(int x, u8 y, u8 worms, u8 len, u8 tr, u8 br, u8 bd) {
         draw_world(); frame();
     }
     render_all();                       /* tunnels are left standing */
-    if (br) {
+    if (br && !round_abort) {
         for (i = 0; i < worms; i++)
             explode(wx[i] >> 6, wy[i] >> 6, br, bd, EX_NORMAL);
     }
@@ -510,7 +510,7 @@ static void liquid(int x, u16 amount) {
     if (x > 255) x = 255;
     for (c = x0; c <= x1; c++) height[c] = surface_at(c, TOPY);
     game_state = ST_EXPLODE;
-    for (n = 0; n < amount; n++) {
+    for (n = 0; n < amount && !round_abort; n++) {
         c = x;
         for (;;) {
             h = height[c];
@@ -534,7 +534,7 @@ static void cone(tank_t *t, u8 reach, u8 set) {
     u8 d, r;
     sfx_boom(2);
     game_state = ST_EXPLODE;
-    for (d = set ? 14 : 8; d <= reach; d += 4) {
+    for (d = set ? 14 : 8; d <= reach && !round_abort; d += 4) {
         px = (int)t->x + ((c * (int)d) >> 8);
         py = (int)t->y - 5 - ((s * (int)d) >> 8);
         r = (d << 1) / 5 + 2;
@@ -727,6 +727,7 @@ void fire(void) {
                     if (r == 2) p->active = 0;
                     else if (r == 1) {
                         p->active = 0;
+                        if (round_abort) continue;
                         sfx_quiet();
                         impact(p);
                         game_state = ST_FLIGHT;
@@ -754,15 +755,31 @@ void fire(void) {
             }
             draw_world();
             frame();
-        } while (any && --timeout);
+        } while (any && --timeout && !round_abort);
     }
     sfx_quiet();
-    if (opt_falling && ex0 <= ex1) settle_range(ex0 - 2, ex1 + 2, eybot);
+    if (opt_falling && ex0 <= ex1 && !round_abort) settle_range(ex0 - 2, ex1 + 2, eybot);
     ex0 = 999; ex1 = -999; eybot = 0;
-    settle_tanks();
-    resolve_deaths();
+    if (!round_abort) {
+        settle_tanks();
+        resolve_deaths();
+    }
     if (w && !t->ammo[w]) t->weapon = 0;
     if (w != W_SMOKE) trail_n = 0;
+}
+
+/* System menu "Mass Kill": every tank still standing blows up */
+void mass_kill(void) {
+    u8 i;
+    tank_t *t = tanks;
+    for (i = 0; i < num_players; i++, t++) {
+        if (!t->alive) continue;
+        t->alive = 0;
+        t->hp = 0;
+        t->shield = 0;
+        t->chute = 0;
+        explode(t->x, (int)t->y - 4, weapons[W_DEATH].radius, 0, EX_NORMAL);
+    }
 }
 
 void resolve_deaths(void) {

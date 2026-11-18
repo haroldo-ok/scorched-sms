@@ -63,6 +63,7 @@ u8 solve_power(u8 a, u8 target, u8 show) {
         if (ae <= 2) break;
         if (err < 0) lo = pw + 1; else { if (!pw) break; hi = pw - 1; }
         if (show && (pw & 1)) think_frame();
+        if (round_abort) return best_p;
     }
     if (sol_err > 4 && aim_tries > 2) {   /* not monotonic (pits, walls): coarse scan + refine */
         for (pw = 8; pw <= 100 && sol_err > 4; pw += 6) {
@@ -70,6 +71,7 @@ u8 solve_power(u8 a, u8 target, u8 show) {
             ae = err < 0 ? -err : err;
             if (ae < sol_err) { sol_err = ae; best_p = pw; }
             if (show) think_frame();
+            if (round_abort) return best_p;
         }
         lo = best_p > 5 ? best_p - 5 : 0;
         hi = best_p + 5 > 100 ? 100 : best_p + 5;
@@ -78,6 +80,7 @@ u8 solve_power(u8 a, u8 target, u8 show) {
             ae = err < 0 ? -err : err;
             if (ae < sol_err) { sol_err = ae; best_p = pw; }
             if (show && !(pw & 1)) think_frame();
+            if (round_abort) break;
         }
     }
     return best_p;
@@ -91,7 +94,7 @@ void solve_aim(u8 target, u8 show) {
     u8 i, a, p, left = tanks[target].x < tanks[cur_player].x;
     s16 best = 32000;
     sol_a = 90; sol_p = 50;
-    for (i = 0; i < aim_tries && best > 3; i++) {
+    for (i = 0; i < aim_tries && best > 3 && !round_abort; i++) {
         a = try_angles[i];
         if (left) a = 180 - a;
         p = solve_power(a, target, show);
@@ -198,7 +201,8 @@ void ai_turn(void) {
 
     if (sk == 4 && t->items[I_HEAT] && is_attack(t->weapon)) t->guide = I_HEAT;
 
-    while (t->angle != sol_a) {             /* swing the turret 3 degrees a frame */
+    if (round_abort) return;
+    while (t->angle != sol_a && !round_abort) {             /* swing the turret 3 degrees a frame */
         if (t->angle < sol_a) t->angle += (sol_a - t->angle > 3) ? 3 : sol_a - t->angle;
         else t->angle -= (t->angle - sol_a > 3) ? 3 : t->angle - sol_a;
         t->tframe = (t->angle + 5) / 10;
@@ -206,7 +210,7 @@ void ai_turn(void) {
         think_frame();
     }
     draw_hud();
-    for (i = 0; i < 12; i++) think_frame();
+    for (i = 0; i < 12 && !round_abort; i++) think_frame();
 }
 
 #define EI(i) (NW + (i))

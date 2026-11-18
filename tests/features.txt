@@ -1,0 +1,121 @@
+symbols scorched.noi
+waituntil game_state == 0 300 w1
+run 90
+tap 1
+waituntil game_state == 1 60 w1
+run 20
+tap right
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap left
+run 4
+tap down
+run 4
+tap down
+run 4
+tap down
+run 4
+tap right
+run 4
+tap down
+run 4
+tap down
+run 4
+tap right
+run 4
+tap right
+run 4
+tap right
+run 4
+tap right
+run 4
+expect opt_sky == 4 w1
+expect opt_autoend == 1 w1
+screenshot shots/f0_setup.ppm
+tap down
+run 4
+tap down
+run 4
+tap 1
+waituntil game_state == 6 100 w1
+run 40
+tap 2
+waituntil game_state == 2 900 w1
+expect cur_sky == 4 w1
+echo lightning
+waituntil bolt_t == 8 900 w1
+screenshot shots/f1_lightning.ppm
+echo auto end: the only human dies, two CPUs still alive
+poke tanks+2 0
+poke tanks+7 0 w1
+poke tanks+5 90 w1
+poke tanks+6 20 w1
+run 3
+tap 1
+waituntil game_state == 5 1500 w1
+expect tanks+74 == 1 w1
+expect tanks+144 == 1 w1
+expect cur_round == 0 w1
+run 10
+screenshot shots/f2_autoend.ppm
+tap 1
+waituntil game_state == 6 200 w1
+run 40
+tap 2
+echo PAUSE -> END ROUND during a CPU turn
+waituntil game_state == 8 2000 w1
+run 10
+pause
+run 4
+expect game_state == 13 w1
+screenshot shots/f3_sysmenu.ppm
+tap down
+run 4
+tap 1
+waituntil game_state == 5 300 w1
+expect cur_round == 1 w1
+expect tanks+74 == 1 w1
+run 10
+screenshot shots/f4_endround.ppm
+tap 1
+waituntil game_state == 6 200 w1
+run 40
+tap 2
+echo PAUSE -> MASS KILL
+waituntil game_state == 2 2000 w1
+run 10
+pause
+run 4
+expect game_state == 13 w1
+tap down
+run 4
+tap down
+run 4
+tap 1
+waituntil game_state == 4 200 w1
+run 6
+screenshot shots/f5_masskill.ppm
+waituntil game_state == 5 600 w1
+expect tanks+4 == 0 w1
+expect tanks+74 == 0 w1
+expect tanks+144 == 0 w1
+run 10
+screenshot shots/f6_masskill_summary.ppm
+tap 1
+waituntil game_state == 7 300 w1
+run 20
+tap 1
+waituntil game_state == 0 600 w1
+echo PAUSE is ignored outside a round
+pause
+run 4
+expect game_state == 0 w1
+expectpace 0
+spmin

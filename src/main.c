@@ -10,6 +10,10 @@ u8 num_players = 2, num_rounds = 5, cur_round, cur_player;
 u8 setup_players = 2;
 u8 ctrl_cfg[4] = {0, 2, 2, 2};
 u8 opt_falling = 1, opt_talk = 1, opt_wind = 1, opt_cash = 2;
+u8 opt_sky = SKY_RANDOM, opt_autoend = 1;
+u8 cur_sky = SKY_SHADED;
+u8 in_round, round_abort, sys_open;
+extern u8 star_seed;
 s8 wind;
 long wind_acc;
 u8 held, pressed;
@@ -30,6 +34,20 @@ const u8 spr_pal[16] = {
     0x3F, 0x03, 0x0F, 0x3C, 0x33, 0x2A, 0x0B, 0x02, 0x15,
     0x3D, 0x37, 0x2F, 0x0C, 0x3E,
     0x00 /* 15: speech-bubble ink */ };
+
+/* sky palette entries 1..8 (top band to bottom band) for each sky style */
+const u8 sky_pals[NSKY][8] = {
+    {0},                                                    /* random: unused */
+    {0x34, 0x34, 0x34, 0x34, 0x34, 0x34, 0x34, 0x34},       /* plain */
+    {0x10, 0x20, 0x24, 0x34, 0x35, 0x39, 0x3A, 0x3E},       /* shaded */
+    {0x00, 0x00, 0x00, 0x10, 0x10, 0x10, 0x20, 0x20},       /* stars */
+    {0x15, 0x15, 0x15, 0x25, 0x25, 0x26, 0x2A, 0x2A},       /* stormy */
+    {0x11, 0x21, 0x22, 0x23, 0x13, 0x07, 0x0B, 0x0F},       /* sunset */
+};
+
+/* storm state */
+u16 storm_cd = 300;
+u8 bolt_t, bolt_x, bolt_y, bolt_zz, flash;
 
 const u8 band[24] = {0,0,0,0,0, 1,1,1, 2,2,2, 3,3,3, 4,4,4, 5,5,5, 6,6, 7,7};
 
@@ -61,11 +79,50 @@ void sfx_whistle(u16 period) {
 }
 void sfx_quiet(void) { PSG = 0x9F; }
 
+void apply_sky(u8 sky) {
+    u8 i;
+    cur_sky = sky;
+    star_seed = rnd();
+    for (i = 0; i < 8; i++) SMS_setBGPaletteColor(i + 1, sky_pals[sky][i]);
+}
+
+/* stormy sky: occasional lightning bolt with a white flash and thunder */
+static void storm_tick(void) {
+    u8 x, y, k, seg;
+    if (cur_sky != SKY_STORMY || !in_round || sys_open) return;
+    if (bolt_t) {
+        bolt_t--;
+        x = bolt_x; seg = 0;
+        for (y = TOPY; y + 8 <= bolt_y; y += 8) {
+            k = (bolt_zz >> (seg & 7)) & 1;
+            SMS_addSprite(x - 4, y, S_BOLT + k);
+            if (k) { if (x < 240) x += 2; } else { if (x > 12) x -= 2; }
+            seg++;
+        }
+        return;
+    }
+    if (--storm_cd) return;
+    storm_cd = 240 + ((u16)rnd() << 1);
+    bolt_t = 12;
+    bolt_x = 16 + rnd() % 224;
+    bolt_y = surface_at(bolt_x, TOPY);
+    bolt_zz = rnd();
+    flash = 4;
+    sfx_boom(6);
+}
+
 void frame(void) {
     u16 k;
+    u8 i;
+    storm_tick();
     SMS_finalizeSprites();
     SMS_waitForVBlank();
     SMS_copySpritestoSAT();
+    if (flash) {
+        flash--;
+        if (flash == 3) for (i = 1; i <= 8; i++) SMS_setBGPaletteColor(i, 0x3F);
+        else if (flash == 1) for (i = 0; i < 8; i++) SMS_setBGPaletteColor(i + 1, sky_pals[cur_sky][i]);
+    }
     k = SMS_getKeysStatus();
     k = (k | (k >> 6)) & 0x3F;      /* pad 2 also drives the game (hot-seat) */
     pressed = (u8)k & ~held;
@@ -73,6 +130,10 @@ void frame(void) {
     sfx_tick();
     frame_count++;
     SMS_initSprites();
+    if (SMS_queryPauseRequested()) {          /* PAUSE opens the system menu */
+        SMS_resetPauseRequest();
+        if (in_round && !sys_open) sys_menu();
+    }
 }
 
 int cosd(u8 a) { return a <= 90 ? (int)sindeg[90 - a] : -(int)sindeg[a - 90]; }
@@ -211,7 +272,7 @@ void settle_tanks(void) {
             }
         }
         if (moved) { draw_world(); frame(); }
-    } while (moved);
+    } while (moved && !round_abort);
 }
 
 void place_tanks(void) {
@@ -242,13 +303,26 @@ void place_tanks(void) {
 }
 
 /* ---------------------------------------------------------------- rounds */
+static u8 humans_in_game(void) {
+    u8 i, n = 0;
+    for (i = 0; i < num_players; i++) if (!tanks[i].ctrl) n++;
+    return n;
+}
+
+static u8 humans_alive(void) {
+    u8 i, n = 0;
+    for (i = 0; i < num_players; i++) if (!tanks[i].ctrl && tanks[i].alive) n++;
+    return n;
+}
+
 void play_round(void) {
-    u8 i, winner = 255;
+    u8 i, winner = 255, reason = END_NORMAL, humans;
     tank_t *t;
     gen_terrain();
     place_tanks();
     terrain_from_heights();
     SMS_displayOff();
+    apply_sky(opt_sky == SKY_RANDOM ? 1 + rnd() % (NSKY - 1) : opt_sky);
     draw_playfield();
     SMS_displayOn();
     set_wind(opt_wind ? (s8)(rnd() % 21) - 10 : 0);
@@ -259,7 +333,12 @@ void play_round(void) {
     }
     cur_player = cur_round % num_players;
     turn_count = 0;
-    while (alive_count() > 1 && turn_count < 200) {
+    humans = humans_in_game();
+    round_abort = END_NORMAL;
+    in_round = 1;
+    storm_cd = 120;
+    while (alive_count() > 1 && turn_count < 200 && !round_abort) {
+        if (opt_autoend && humans && !humans_alive()) { round_abort = END_NOHUMANS; break; }
         t = &tanks[cur_player];
         if (t->alive) {
             if (opt_wind == 2) set_wind(wind + (s8)(rnd() % 5) - 2);
@@ -267,14 +346,22 @@ void play_round(void) {
             t->fall = 0;
             draw_hud();
             if (t->ctrl) ai_turn(); else human_turn();
+            if (round_abort) break;
             draw_hud();
             talk_attack(t);
+            if (round_abort) break;
             fire();
             turn_count++;
         }
         if (++cur_player >= num_players) cur_player = 0;
     }
-    for (i = 0; i < num_players; i++) if (tanks[i].alive) winner = i;
+    reason = round_abort;
+    if (reason == END_MASSKILL) mass_kill();
+    in_round = 0;
+    round_abort = END_NORMAL;
+    sfx_quiet();
+    if (reason == END_NORMAL)
+        for (i = 0; i < num_players; i++) if (tanks[i].alive) winner = i;
     if (alive_count() > 1) winner = 255;
     for (i = 0; i < 60; i++) { draw_world(); frame(); }
     if (winner != 255) {
@@ -282,7 +369,7 @@ void play_round(void) {
         tanks[winner].wins++;
         award(500);
     }
-    round_summary(winner);
+    round_summary(winner, reason);
 }
 
 void main(void) {
@@ -301,6 +388,8 @@ void main(void) {
     SMS_load1bppTiles(font_1bpp, T_FONT, 512, 0, 15);
     SMS_loadTiles(spr_tiles, T_SPR, N_SPR_TILES * 32);
     SMS_initSprites();
+
+    SMS_loadTiles(star_tiles, T_STAR, 16 * 32);
 
     for (;;) {
         title();

@@ -48,14 +48,27 @@ static void pool_release(u8 s) {
     pool_free++;
 }
 
-static u16 code_tile(u8 c, u8 cy) {
-    if (c == 0) return T_SKY + band[cy + 2];
+u8 star_seed;
+
+/* plain sky, or (starry night) a scattering of star tiles */
+static u16 sky_tile(u8 cx, u8 cy) {
+    u8 b = band[cy + 2], h;
+    if (cur_sky == SKY_STARS) {
+        u16 v = ((((u16)cy << 5) + cx) ^ ((u16)star_seed << 3)) * 40503u;
+        h = (u8)(v >> 8) ^ (u8)(v >> 13);
+        if (h < 30) return T_STAR + (b << 1) + (h & 1);
+    }
+    return T_SKY + b;
+}
+
+static u16 code_tile(u8 c, u8 cx, u8 cy) {
+    if (c == 0) return sky_tile(cx, cy);
     if (c == 1) return T_GROUND;
     return pool_tile(c - 2);
 }
 
 u16 cell_tile(u8 cx, u8 cy) {
-    return code_tile(cellmap[((u16)cy << 5) + cx], cy);
+    return code_tile(cellmap[((u16)cy << 5) + cx], cx, cy);
 }
 
 static void markc(u8 cy, u8 cx) {
@@ -247,7 +260,7 @@ static void build_cell(u8 cx, u8 cy) {
     if (nc < 2 && old >= 2) pool_release(old - 2);
     if (nc != old) {
         cellmap[idx] = nc;
-        SMS_setTileatXY(cx, cy + 2, code_tile(nc, cy));
+        SMS_setTileatXY(cx, cy + 2, code_tile(nc, cx, cy));
     }
 }
 
@@ -351,7 +364,7 @@ void draw_playfield(void) {
     for (r = 0; r < 2; r++) clear_row(r);
     for (r = 2; r < 23; r++) {
         SMS_setNextTileatXY(0, r);
-        for (cx = 0; cx < 32; cx++) SMS_setTile(T_SKY + band[r]);
+        for (cx = 0; cx < 32; cx++) SMS_setTile(sky_tile(cx, r - 2));
     }
     SMS_setNextTileatXY(0, 23);
     for (cx = 0; cx < 32; cx++) SMS_setTile(T_BEDROCK);
@@ -531,6 +544,6 @@ found:
             draw_world();
             frame();
         }
-    } while (any);
+    } while (any && !round_abort);
     render_all();
 }

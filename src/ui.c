@@ -103,7 +103,7 @@ void say(tank_t *t, const char *s) {
     print_at(col + len - 1, row, " ");
     font_bubble = 0;
     sfx_blip(90);
-    for (i = 0; i < 80; i++) { draw_world(); frame(); }
+    for (i = 0; i < 80 && !round_abort; i++) { draw_world(); frame(); }
     restore_rows(row, row);
     game_state = st;
 }
@@ -143,7 +143,7 @@ u8 select_target(void) {
         if (pressed & K_LEFT) { tg = next_enemy(tg, -1); sfx_blip(150); }
         if (pressed & K_RIGHT) { tg = next_enemy(tg, 1); sfx_blip(150); }
         if (pressed & K_1) { ok = 1; guide_target = tg; break; }
-        if (pressed & K_2) break;
+        if ((pressed & K_2) || round_abort) break;
     }
     game_state = st;
     draw_hud();
@@ -191,7 +191,7 @@ static void move_mode(void) {
             }
         } else { rep = 0; PSG = 0xFF; }
         if (pressed & (K_1 | K_2)) break;
-        if (!t->alive || t->hp <= 0) break;
+        if (!t->alive || t->hp <= 0 || round_abort) break;
     }
     PSG = 0xFF;
     game_state = ST_AIM;
@@ -294,6 +294,7 @@ static void ingame_menu(void) {
     for (;;) {
         if (redraw) { menu_draw(t, sel, shs); draw_hud(); redraw = 0; }
         frame();
+        if (round_abort) break;
         dir = 0;
         if (pressed & K_LEFT) dir = -1;
         if (pressed & K_RIGHT) dir = 1;
@@ -353,6 +354,43 @@ done:
     draw_hud();
 }
 
+/* ------------------------------------------------------- system menu */
+static const char * const sys_items[3] = {"RESUME", "END ROUND", "MASS KILL"};
+
+void sys_menu(void) {
+    u8 sel = 0, i, st = game_state, redraw = 1, choice = 255;
+    sys_open = 1;
+    game_state = ST_SYSMENU;
+    PSG = 0x9F; PSG = 0xBF; PSG = 0xDF; PSG = 0xFF;
+    for (i = 8; i <= 15; i++) clear_row(i);
+    print_at(10, 8, "SYSTEM MENU");
+    print_at(1, 15, "UD:PICK 1:OK 2/PAUSE:RESUME");
+    for (;;) {
+        if (redraw) {
+            for (i = 0; i < 3; i++) {
+                print_at(10, 10 + i, i == sel ? ">" : " ");
+                print_at(12, 10 + i, sys_items[i]);
+            }
+            print_at(4, 13, sel == 1 ? "STOP NOW, NO WINNER.     " :
+                            sel == 2 ? "BLOW UP EVERY TANK.      " :
+                                       "BACK TO THE BATTLE.      ");
+            redraw = 0;
+        }
+        frame();
+        if ((pressed & K_UP) && sel) { sel--; redraw = 1; sfx_blip(150); }
+        if ((pressed & K_DOWN) && sel < 2) { sel++; redraw = 1; sfx_blip(150); }
+        if (pressed & K_2) break;
+        if (SMS_queryPauseRequested()) { SMS_resetPauseRequest(); break; }
+        if (pressed & K_1) { choice = sel; break; }
+    }
+    sfx_blip(100);
+    restore_rows(8, 15);
+    if (choice == 1) round_abort = END_MENU;
+    else if (choice == 2) round_abort = END_MASSKILL;
+    game_state = st;
+    sys_open = 0;
+}
+
 /* ------------------------------------------------------------- human */
 static u8 needs_target(u8 g, u8 w) {
     u8 c = weapons[w].cls;
@@ -367,7 +405,7 @@ void human_turn(void) {
     draw_hud();
     for (;;) {
         draw_world(); draw_arrow(); frame();
-        if (!t->alive) return;
+        if (!t->alive || round_abort) return;
         dirty = 0;
         if (held & (K_UP | K_DOWN | K_LEFT | K_RIGHT)) {
             if (rep < 255) rep++;
@@ -481,6 +519,7 @@ void title(void) {
     for (i = 0; i < 4; i++, t++) { t->angle = 30 + (rnd() % 120); t->tframe = (t->angle + 5) / 10; }
     trail_n = 0;
     SMS_displayOff();
+    apply_sky(SKY_SHADED);
     draw_playfield();
     font_bubble = 1;
     print_at(4, 3, "  S C O R C H E D  S M S  ");
@@ -502,6 +541,7 @@ void title(void) {
 
 static const u16 cash_opts[5] = {0, 2000, 5000, 10000, 20000};
 static const char * const wind_names[3] = {"OFF     ", "NORMAL  ", "CHANGING"};
+static const char * const sky_names[NSKY] = {"RANDOM", "PLAIN ", "SHADED", "STARS ", "STORMY", "SUNSET"};
 
 void setup(void) {
     u8 sel = 0, i, redraw = 1, items, r, base;
@@ -512,7 +552,7 @@ void setup(void) {
     print_at(1, 21, "UD:SELECT  LR:CHANGE  1:START");
     for (;;) {
         base = setup_players + 1;
-        items = base + 6;
+        items = base + 8;
         if (redraw) {
             for (i = 3; i < 20; i++) clear_row(i);
             print_at(6, 3, "PLAYERS");       print_num(21, 3, setup_players, 1);
@@ -526,11 +566,13 @@ void setup(void) {
             print_at(6, 12, "FALLING DIRT");  print_at(21, 12, opt_falling ? "ON " : "OFF");
             print_at(6, 13, "TALKING TANKS"); print_at(21, 13, opt_talk ? "ON " : "OFF");
             print_at(6, 14, "WIND");          print_at(21, 14, wind_names[opt_wind]);
-            print_at(6, 16, "START GAME");
+            print_at(6, 15, "SKY");           print_at(21, 15, sky_names[opt_sky]);
+            print_at(6, 16, "AUTO END ROUND");print_at(21, 16, opt_autoend ? "ON " : "OFF");
+            print_at(6, 18, "START GAME");
             if (sel == 0) r = 3;
             else if (sel < base) r = 4 + sel;
-            else if (sel < base + 5) r = 10 + sel - base;
-            else r = 16;
+            else if (sel < base + 7) r = 10 + sel - base;
+            else r = 18;
             print_at(4, r, ">");
             redraw = 0;
         }
@@ -557,6 +599,8 @@ void setup(void) {
         else if (sel == base + 2) opt_falling ^= 1;
         else if (sel == base + 3) opt_talk ^= 1;
         else if (sel == base + 4) opt_wind = (u8)(opt_wind + 3 + dir) % 3;
+        else if (sel == base + 5) opt_sky = (u8)(opt_sky + NSKY + dir) % NSKY;
+        else if (sel == base + 6) opt_autoend ^= 1;
         else if (pressed & K_1) break;
     }
     num_players = setup_players;
@@ -578,12 +622,15 @@ static void score_table(u8 y) {
     }
 }
 
-void round_summary(u8 winner) {
+void round_summary(u8 winner, u8 reason) {
     game_state = ST_ROUNDEND;
     text_screen();
     print_at(10, 3, "ROUND    OVER");
     print_num(16, 3, cur_round + 1, 2);
-    if (winner == 255) print_at(9, 6, "NO SURVIVORS!");
+    if (reason == END_MENU) print_at(7, 6, "ROUND ENDED EARLY");
+    else if (reason == END_MASSKILL) print_at(10, 6, "MASS KILL!");
+    else if (reason == END_NOHUMANS) print_at(5, 6, "NO HUMANS LEFT STANDING");
+    else if (winner == 255) print_at(9, 6, "NO SURVIVORS!");
     else {
         print_at(7, 6, "PLAYER   SURVIVES!");
         print_digit(14, 6, winner + 1);

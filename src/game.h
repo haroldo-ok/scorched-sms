@@ -18,9 +18,10 @@ __sfr __at 0x7F PSG;
 #define T_POOL1   74     /* dynamic terrain tiles */
 #define N_POOL1   182
 #define T_SPR     256
-#define NSPR      40
+#define NSPR      42
 #define T_POOL2   (T_SPR + NSPR)
 #define N_POOL    254
+#define T_STAR    380    /* 16 star tiles: band*2 + variant */
 #define BUBBLE    TILE_USE_SPRITE_PALETTE
 
 /* sprite tiles (relative to 256) */
@@ -38,6 +39,7 @@ __sfr __at 0x7F PSG;
 #define S_CROSS  37
 #define S_LASER  38
 #define S_BALL   39
+#define S_BOLT   40
 
 #define K_UP 1
 #define K_DOWN 2
@@ -58,7 +60,11 @@ __sfr __at 0x7F PSG;
 #define NFL 16
 
 enum { ST_TITLE, ST_SETUP, ST_AIM, ST_FLIGHT, ST_EXPLODE, ST_ROUNDEND, ST_SHOP,
-       ST_GAMEOVER, ST_THINK, ST_MENU, ST_MOVE, ST_TARGET, ST_TALK };
+       ST_GAMEOVER, ST_THINK, ST_MENU, ST_MOVE, ST_TARGET, ST_TALK, ST_SYSMENU };
+
+enum { SKY_RANDOM, SKY_PLAIN, SKY_SHADED, SKY_STARS, SKY_STORMY, SKY_SUNSET, NSKY };
+/* round_abort / end reasons */
+enum { END_NORMAL, END_MENU, END_MASSKILL, END_NOHUMANS };
 
 /* weapon classes */
 enum { C_EXPL, C_LEAP, C_FUNKY, C_MIRV, C_NAPALM, C_TRACER, C_ROLLER, C_RIOTCHG,
@@ -129,7 +135,8 @@ typedef struct {
 extern tank_t tanks[4];
 extern u8 game_state, num_players, num_rounds, cur_round, cur_player;
 extern u8 setup_players, ctrl_cfg[4];
-extern u8 opt_falling, opt_talk, opt_wind, opt_cash;
+extern u8 opt_falling, opt_talk, opt_wind, opt_cash, opt_sky, opt_autoend;
+extern u8 cur_sky, in_round, round_abort, sys_open;
 extern s8 wind;
 extern long wind_acc;
 extern u8 held, pressed;
@@ -158,6 +165,7 @@ void hurt(u8 i, u16 dmg);
 u8 activate_best_shield(tank_t *t);
 void use_shield(tank_t *t, u8 it);
 void set_wind(s8 w);
+void apply_sky(u8 sky);
 void place_tanks(void);
 void award(u16 a);
 u8 buy_entry(tank_t *t, u8 e);
@@ -199,6 +207,7 @@ void launch(proj_t *p, tank_t *t, u8 a, u8 pw);
 u8 step(proj_t *p);
 void fire(void);
 void resolve_deaths(void);
+void mass_kill(void);
 
 /* ---- ai.c ---- */
 s16 simulate(u8 a, u8 pw, u8 target, u8 left);
@@ -222,7 +231,8 @@ u8 select_target(void);
 void shop(u8 pi);
 void title(void);
 void setup(void);
-void round_summary(u8 winner);
+void round_summary(u8 winner, u8 reason);
+void sys_menu(void);
 void game_over(void);
 void wait_button(void);
 

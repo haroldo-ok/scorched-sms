@@ -41,6 +41,27 @@ between rounds.
   by simulating the real shot, including wind and shields. Higher levels aim
   better, shop smarter and use shields and batteries.
 - **Wind:** off, normal, or changing between turns.
+- **Sky styles,** chosen in setup like the original's Sky option:
+  - **Random** (default): a different style each round.
+  - **Plain:** a solid blue sky.
+  - **Shaded:** a vertical blue gradient.
+  - **Stars:** a black night sky dotted with stars.
+  - **Stormy:** a dark, overcast sky with lightning bolts, a white flash and
+    thunder every few seconds. The lightning is scenery only and does no
+    damage.
+  - **Sunset:** a purple-to-orange dusk gradient.
+- **Auto end round (optional, on by default).** If every human player has been
+  destroyed, the round ends at once instead of making you watch the CPUs finish
+  it. There is no round winner, and play moves on to the shop. It does nothing
+  in an all-CPU game.
+- **System menu (PAUSE button).** Press the console's PAUSE button at any time
+  during a round, including a CPU turn or a shell in flight:
+  - **Resume:** carry on playing.
+  - **End Round:** stop now with no winner.
+  - **Mass Kill:** every remaining tank explodes.
+
+  After End Round or Mass Kill, any shot in progress is cut short and the game
+  goes to the round summary, then the shop.
 - **Setup:** 3, 5 or 10 rounds, and a choice of starting cash.
 - **Sound:** PSG sound effects for firing, the falling-shell whistle, explosions
   and napalm crackle.
@@ -53,8 +74,11 @@ between rounds.
 | D-pad Up / Down | Shot power |
 | Button 1 | Fire / confirm |
 | Button 2 | In-game arsenal menu / back |
+| PAUSE (console) | System menu: Resume, End Round, Mass Kill |
 
-Pad 2 works too, for hot-seat play.
+Pad 2 works too, for hot-seat play. The Master System has no keyboard, so the
+console's PAUSE button takes the place of the DOS game's F9/Esc system-menu
+keys. In an emulator, PAUSE is usually mapped to Enter or Start.
 
 **In-game menu (Button 2):**
 - **WEAPON:** cycle through the weapons you own (Left/Right).
@@ -88,7 +112,8 @@ The ROM is 48 KB and does no bank switching.
   plus SMSlib.
 - **Bank 2 (`0x8000`–`0xBFFF`):** `ui.c`, `ai.c` and the asset data, compiled
   with `--codeseg/--constseg BANK2`. Bank 2 stays mapped in that slot for the
-  whole game.
+  whole game. It is nearly full (about 700 bytes left), so more UI code will
+  need another bank or a move into the fixed area, which has room to spare.
 
 ### Source map
 
@@ -100,7 +125,7 @@ The ROM is 48 KB and does no bank switching.
 | `src/weapons.c` | Weapon and item tables, projectile physics, guidance, every weapon behaviour |
 | `src/ai.c` | CPU aiming (simulated shots), weapon choice, shopping |
 | `src/ui.c` | HUD, menus, shop, setup, speech bubbles, movement, target selection |
-| `gen.py` | Generates `src/data.c` / `data.h`: font, sprites, fixed tiles, sine tables |
+| `gen.py` | Generates `src/data.c` / `data.h`: font, sprites, fixed tiles, star tiles, sine tables |
 
 ## How the terrain works
 
@@ -118,6 +143,13 @@ are written in Z80 assembly because SDCC's code for those loops was about 6×
 slower. If the pool ever runs out, a cell is shown as plain sky or plain
 ground, whichever is closer. Physics always uses the exact bitmap.
 
+Sky styles cost almost nothing. Sky pixels, both in all-sky cells and in the
+sky part of mixed cells, use background palette entries 1–8, one per
+horizontal band. A style is just a different set of those eight colours, and
+the lightning flash briefly turns all eight white. The starry sky also swaps
+some all-sky cells for 16 star tiles: one star tile and one twinkle tile per
+band, placed by a hash of the cell position.
+
 ## Testing
 
 The game is tested headlessly with the `smstest` emulator from the
@@ -128,9 +160,12 @@ python3 tests/gen_tests.py
 smstest scorched.sms tests/playtest.txt   # 2 humans: every weapon class + items
 smstest scorched.sms tests/items2.txt     # guidance, force shield, trigger, super mag, auto defense
 smstest scorched.sms tests/soak.txt       # 4 CPUs (all skills), talking, changing wind, 3 rounds
+smstest scorched.sms tests/features.txt   # auto end, PAUSE menu (End Round, Mass Kill), lightning
+smstest scorched.sms tests/sky_stars.txt  # one per sky style: sky_plain/_shaded/_stars/_stormy/_sunset
 ```
 
-All three scripts pass. Each one drives the game with scripted input, checks
+All nine scripts pass. Each one drives the game with scripted input (including the console PAUSE
+button), checks
 game variables (state, ammo, HP, shields, fuel, guidance mode) and saves
 screenshots to `shots/`.
 

@@ -188,6 +188,30 @@ spr += pic("""
 ........
 """, {'G': 6, 'W': 1})                           # 39 roller
 
+BOLT_R = """
+....WY..
+....WY..
+....WWY.
+.....WY.
+.....WY.
+.....WWY
+......WY
+......WY
+"""
+spr += pic(BOLT_R, {'W': 1, 'Y': 3})            # 40 bolt segment, drifts right
+spr += pic('\n'.join(r[::-1] for r in BOLT_R.strip().split('\n')), {'W': 1, 'Y': 3})  # 41 drifts left
+
+# ---- star tiles: for each of the 8 sky bands, two variants (sky colour + white stars)
+stars = []
+for b in range(8):
+    for v in range(2):
+        g2 = [[b + 1] * 8 for _ in range(8)]
+        pts = [(2, 1), (6, 5)] if v == 0 else [(5, 2)]
+        for (x, y) in pts: g2[y][x] = 15
+        if v == 1:
+            g2[1][5] = g2[3][5] = 12; g2[2][4] = g2[2][6] = 12   # twinkle cross (grey)
+        stars += tile(g2)
+
 def carr(name, data, typ="unsigned char"):
     s = "const %s %s[%d] = {\n" % (typ, name, len(data))
     for i in range(0, len(data), 16):
@@ -203,6 +227,7 @@ def add(name, data, typ="unsigned char"):
 add("font_1bpp", font)
 add("bg_tiles", bg)
 add("spr_tiles", spr)
+add("star_tiles", stars)
 add("sin256", [int(round(127 * math.sin(i * 2 * math.pi / 256))) for i in range(256)], "signed char")
 add("sindeg", [int(round(255 * math.sin(math.radians(i)))) for i in range(91)])
 h += "#define N_SPR_TILES %d\n#endif\n" % (len(spr) // 32)
